@@ -1,0 +1,62 @@
+// npx prisma migrate dev --name <name> --create-only - create new migration based on schema
+
+// npx prisma migrate reset - drops database
+
+// npx prisma migrate dev - apply all migrations in development
+// npx prisma migrate deploy - apply all migrations in prodicton/test enviroments
+
+// npx prisma generate - to update prisma client
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Roles {
+  User
+  Manager
+  Admin
+}
+
+model User {
+  Id String @id @default(uuid())
+  username String @db.VarChar(60) @unique
+  password String @db.VarChar(80)
+  
+  roles UserRole[]
+  teams UserInTeam[]
+
+  @@index([username])
+}
+
+model Team {
+  Id String @id @default(uuid())
+  Name String @db.VarChar(60) @unique
+  
+  Users UserInTeam[]
+}
+
+model UserInTeam {
+  Id String @id @default(uuid())
+  User User @relation(fields: [UserId], references: [Id])
+  UserId String
+  Team Team @relation(fields: [TeamId], references: [Id])
+  TeamId String
+
+  roles UserRole[]
+}
+
+model UserRole {
+  Id String @id @default(uuid())
+  Start DateTime @db.Timestamp() @default(now())
+  End DateTime? @db.Timestamp()
+  User User @relation(fields: [UserId], references: [Id])
+  UserId String
+  UserInTeam UserInTeam @relation(fields: [UserInTeamId], references: [Id])
+  UserInTeamId String
+  Role Roles
+}
